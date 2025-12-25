@@ -1,0 +1,12 @@
+manifest:
+  version: "0.12"
+
+  projects:
+    - name: zephyr
+      path: zephyr
+      url: https://github.com/akkhauv/zephyr.git
+      revision: spi_peripheral
+
+  self:
+    path: .
+
