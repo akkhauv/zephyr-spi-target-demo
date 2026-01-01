@@ -4,7 +4,7 @@
 SIM_BOARD        := "qemu_x86"
 
 ESP_BOARD        := "esp32s3_devkitc/esp32s3/procpu"
-ESP_PORT         := "/dev/ttyUSB0"          # adjust
+ESP_PORT         := "/dev/tty.usbserial-1130"          # adjust
 
 CMAKE_CACHE_ARGS := "-- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
 
@@ -53,6 +53,15 @@ build-esp32-spi-example: _verify_workspace clean
     {{CMAKE_CACHE_ARGS}} \
     -DEXTRA_DTC_OVERLAY_FILE="{{justfile_directory()}}/spi_example_app/boards/spi_esp32s3_devkitc.overlay"
 
+build-esp32-spi-module: _verify_workspace clean
+  west build \
+    -p always \
+    -b "{{ESP_BOARD}}" \
+    -d build \
+    spi_module_app \
+    {{CMAKE_CACHE_ARGS}} \
+    -DEXTRA_DTC_OVERLAY_FILE="{{justfile_directory()}}/spi_module_app/boards/spi_esp32s3_devkitc.overlay"
+
 flash-esp32:
   west flash --build-dir build
 
@@ -62,6 +71,8 @@ monitor-esp32:
 run-esp32: build-esp32 flash-esp32 monitor-esp32
 
 run-esp32-spi-example: build-esp32-spi-example flash-esp32 monitor-esp32
+
+run-esp32-spi-module: build-esp32-spi-module flash-esp32 monitor-esp32
 
 attach-wsl-usb-port:
   #!/usr/bin/env bash

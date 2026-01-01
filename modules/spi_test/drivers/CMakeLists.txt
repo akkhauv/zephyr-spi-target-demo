@@ -1,1 +1,1 @@
-add_subdirectory_ifdef(CONFIG_SPI_TEST spi_test)
+add_subdirectory_ifdef(CONFIG_MY_SPI_TEST spi_test)

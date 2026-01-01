@@ -16,17 +16,19 @@
 
 manifest:
   defaults:
-    remote: upstream
+    remote: myfork
 
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: myfork
+      url-base: https://github.com/akkhauv
 
   group-filter: [-optional]
 
   projects:
     - name: zephyr
-      remote: upstream
+      remote: myfork
       revision: main
       path: zephyr
       import: false
