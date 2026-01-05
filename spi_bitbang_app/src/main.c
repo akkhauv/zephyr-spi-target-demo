@@ -122,10 +122,10 @@ int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
-	if (!device_is_ready(dev)) {
-		printk("%s: device not ready.\n", dev->name);
-		return 0;
-	}
+	// if (!device_is_ready(dev)) {
+	// 	printk("%s: device not ready.\n", dev->name);
+	// 	return 0;
+	// }
 
 	struct spi_cs_control cs_ctrl = (struct spi_cs_control){
 		.gpio = GPIO_DT_SPEC_GET(SPIBB_NODE, cs_gpios),
