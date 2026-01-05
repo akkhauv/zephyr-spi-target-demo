@@ -2,7 +2,7 @@
 #include <zephyr/devicetree.h>
 
 // our own specifiers
-#define LEN_TRANSCEIVE 4
+#define LEN_TRANSCEIVE 12
 #define DELAY 0
 #define SPI_DEVICE_NAME spi2
 
@@ -16,7 +16,7 @@ static const spi_operation_t operation_flags = (
 static const struct device *spis_device = DEVICE_DT_GET(DT_NODELABEL(SPI_DEVICE_NAME));
 static const struct spi_config spis_config = {
     .operation = operation_flags,
-    .frequency = 1600000};
+    .frequency = 1000000};
 
 // static volatile const struct spi_dt_spec spi_device = SPI_DT_SPEC_GET(
 //     DT_NODELABEL(SPI_DEVICE_NAME),

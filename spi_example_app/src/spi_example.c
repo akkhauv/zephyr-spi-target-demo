@@ -2,7 +2,7 @@
 #include <zephyr/devicetree.h>
 
 // our own specifiers
-#define LEN_TRANSCEIVE 4
+#define LEN_TRANSCEIVE 12
 #define SPI_DEVICE_NAME esp32
 
 // operation flags we want
