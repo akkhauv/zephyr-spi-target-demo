@@ -1,0 +1,12 @@
+# ESP32 SPI configuration
+
+# Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_BITBANG_SPIS
+	bool "Bitbang SPI Slave controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SPI_BITBANG_SPIS_ENABLED
+	help
+	  Enable the Bitbang SPI Slave controller
+

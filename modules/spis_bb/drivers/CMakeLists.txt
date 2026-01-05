@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_SPI_BITBANG_SPIS spis_bb)
