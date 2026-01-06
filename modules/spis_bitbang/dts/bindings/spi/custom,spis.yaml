@@ -3,7 +3,7 @@
 
 description: Zephyr SPI Bitbang driver
 
-compatible: "zephyr,spi-bitbang-spis"
+compatible: "custom,spis"
 
 include: spi-controller.yaml
 

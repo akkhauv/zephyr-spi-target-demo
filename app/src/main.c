@@ -1,7 +1,23 @@
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#define SW0_NODE DT_ALIAS(sw0)
+static const struct gpio_dt_spec my_button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
 
-void main(void)
+int main(void)
 {
-    printk("Hello from my custom Zephyr fork!\n");
-}
+    gpio_pin_configure_dt(&my_button, GPIO_INPUT);
 
+    int gpio_val = gpio_pin_get_dt(&my_button);
+    int prev = !gpio_val;
+    while (1) 
+    {
+        gpio_val = gpio_pin_get_dt(&my_button);
+        if (gpio_val != prev) {
+            printk("%d\n", gpio_val);
+            prev = gpio_val;
+        }
+    } 
+
+    return 0;
+}

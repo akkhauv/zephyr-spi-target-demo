@@ -3,17 +3,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define DT_DRV_COMPAT custom_spis
+#include <zephyr/logging/log_ctrl.h>
 
-#define DT_DRV_COMPAT zephyr_spi_bitbang_spis
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+// TODO: DELETE
+#include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spis_bitbang);
+#include <zephyr/drivers/gpio.h>
+LOG_MODULE_REGISTER(spis_bitbang, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
-#include "spi_context.h"
+#include "spis_context.h"
 
 struct spis_bitbang_data {
 	struct spi_context ctx;
@@ -64,6 +66,7 @@ static int spis_bitbang_configure(const struct spis_bitbang_config *info,
 
 	data->ctx.config = config;
 
+	// log_panic();
 	return 0;
 }
 
@@ -77,10 +80,47 @@ static int spis_bitbang_transceive(const struct device *dev,
 	struct spis_bitbang_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int rc;
-	const struct gpio_dt_spec *miso = NULL;
-	const struct gpio_dt_spec *mosi = NULL;
-	const struct gpio_dt_spec *cs = data->ctx.cs_gpios;
-	gpio_flags_t mosi_flags = GPIO_OUTPUT_INACTIVE;
+	const struct gpio_dt_spec *miso = &info->miso_gpio;
+	const struct gpio_dt_spec *mosi = &info->mosi_gpio;
+	const struct gpio_dt_spec *cs = &(data->ctx.cs_gpios[0]);
+	// gpio_flags_t mosi_flags = GPIO_OUTPUT_INACTIVE;
+
+	/*
+	--
+	*/
+
+	// if (info->mosi_gpio.port) {
+	// 	mosi = &info->mosi_gpio;
+	// }
+
+	rc = gpio_pin_configure_dt(cs, GPIO_INPUT | GPIO_PULL_DOWN);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure CS pin: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_configure_dt(mosi, GPIO_INPUT);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure MOSI pin: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_configure_dt(miso, GPIO_OUTPUT_INACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure MISO pin: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_configure_dt(&info->clk_gpio, GPIO_INPUT);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure CLK pin: %d", rc);
+		return rc;
+	}
+
+
+	/*
+	--
+	*/
 
 	rc = spis_bitbang_configure(info, data, spi_cfg);
 	if (rc < 0) {
@@ -107,8 +147,16 @@ static int spis_bitbang_transceive(const struct device *dev,
 		lsb = true;
 	}
 
+	LOG_DBG("Waiting for CS to go low");
+	// log_panic();
+
 	// wait for CS to go low
-	while (gpio_pin_get_dt(cs) == 0); /* no op */
+	while (gpio_pin_get_dt(cs) == 0) {
+		/* no op */
+	}
+
+	LOG_DBG("Beginning loop; cs is %d | tx is %d | rx is %d",
+		gpio_pin_get_dt(cs), spi_context_tx_buf_on(ctx), spi_context_rx_buf_on(ctx));
 
 	while (gpio_pin_get_dt(cs) && 
 		(spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx))) {
@@ -138,7 +186,7 @@ static int spis_bitbang_transceive(const struct device *dev,
 			do_read = true;
 		}
 
-		while (gpio_pin_get_dt(cs) && i < data->bits) {
+		while (gpio_pin_get_dt(cs) == 1 && i < data->bits) {
 			const int shift = lsb ? i : (data->bits - 1 - i);
 			const int d = (w >> shift) & 0x1;
 
@@ -150,14 +198,18 @@ static int spis_bitbang_transceive(const struct device *dev,
 			}
 
 			/* wait until first (leading) clock edge */
-			while (gpio_pin_get_dt(&info->clk_gpio) == clock_state); /* no op */
+			while (gpio_pin_get_dt(&info->clk_gpio) == clock_state) {
+				/* no op */
+			}
 
 			if (!loop && do_read && !cpha) {
 				b = gpio_pin_get_dt(mosi);
 			}
 
 			/* wait until second (trailing) clock edge */
-			while (gpio_pin_get_dt(&info->clk_gpio) != clock_state); /* no op */
+			while (gpio_pin_get_dt(&info->clk_gpio) != clock_state) {
+				/* no op */
+			}
 
 			if (!loop && do_read && cpha) {
 				b = gpio_pin_get_dt(mosi);
@@ -192,6 +244,7 @@ static int spis_bitbang_transceive(const struct device *dev,
 		spi_context_update_tx(ctx, data->dfs, 1);
 		spi_context_update_rx(ctx, data->dfs, 1);
 	}
+	// log_panic();
 
 	spi_context_complete(ctx, dev, 0);
 
@@ -220,19 +273,11 @@ int spis_bitbang_release(const struct device *dev,
 	return 0;
 }
 
-static DEVICE_API(spi, spis_bitbang_api) = {
-	.transceive = spis_bitbang_transceive,
-	.release = spis_bitbang_release,
-#ifdef CONFIG_SPI_ASYNC
-	.transceive_async = spis_bitbang_transceive_async,
-#endif /* CONFIG_SPI_ASYNC */
-#ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
-#endif
-};
-
 int spis_bitbang_init(const struct device *dev)
 {
+	LOG_ERR("Hello world!");
+	// log_panic();
+
 	const struct spis_bitbang_config *config = dev->config;
 	struct spis_bitbang_data *data = dev->data;
 	int rc;
@@ -272,23 +317,43 @@ int spis_bitbang_init(const struct device *dev)
 		}
 	}
 
-	if (data->ctx->num_cs_gpios == 0) {
+	if (data->ctx.num_cs_gpios == 0) {
 		LOG_ERR("CS pin is needed");
 		return -EINVAL;
 	}
-	if (data->ctx->num_cs_gpios > 1) {
-		LOG_WRN("More than 1 CS in slave context is not permitted. Configuring only first CS GPIO.")
+	if (data->ctx.num_cs_gpios > 1) {
+		LOG_WRN("More than 1 CS in slave context is not permitted. Configuring only first CS GPIO.");
 	}
-	rc = gpio_pin_configure_dt(data->ctx.cs_gpios, GPIO_INPUT);
+	if (!gpio_is_ready_dt(data->ctx.cs_gpios))
+	{
+		LOG_ERR("CS GPIO not ready");
+		return -ENODEV;
+	}
+	rc = gpio_pin_configure_dt(data->ctx.cs_gpios, GPIO_INPUT | GPIO_PULL_DOWN);
 	if (rc < 0) {
 		LOG_ERR("Failed to configure CS pins: %d", rc);
 		return rc;
 	}
 
+	// log_panic();
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
-#define SPI_BITBANG_SPIS_INIT(inst)						\
+static DEVICE_API(spi, spis_bitbang_api) = {
+	.transceive = spis_bitbang_transceive,
+	.release = spis_bitbang_release,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spis_bitbang_transceive_async,
+#endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
+};
+
+#define SPIS_DEFINE(inst)						\
 	static struct spis_bitbang_config spis_bitbang_config_##inst = {	\
 		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),	\
 		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),	\
@@ -310,4 +375,4 @@ int spis_bitbang_init(const struct device *dev)
 			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spis_bitbang_api);
 
-DT_INST_FOREACH_STATUS_OKAY(SPI_BITBANG_SPIS_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPIS_DEFINE)

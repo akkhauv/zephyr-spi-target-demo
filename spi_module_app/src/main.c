@@ -41,8 +41,7 @@ int main()
     const struct spi_buf_set tx_buf = {&spi_write_buf, 1};
 
     // populate the write buffer
-    for (int i = 0; i < LEN_TRANSCEIVE; i++)
-        write_buf[i] = i + 4;
+    for (int i = 0; i < LEN_TRANSCEIVE; i++) write_buf[i] = i + 4;
 
     // transceive
     int transceive_res = spi_transceive(spis_device, &spis_config, &tx_buf, &rx_buf);
