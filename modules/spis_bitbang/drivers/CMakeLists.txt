@@ -1,1 +1,1 @@
-add_subdirectory_ifdef(CONFIG_CUSTOM_SPIS spis_bitbang)
+add_subdirectory_ifdef(CONFIG_SPIS_BITBANG spis_bitbang)

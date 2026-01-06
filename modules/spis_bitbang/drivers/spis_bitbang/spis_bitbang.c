@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define DT_DRV_COMPAT custom_spis
+#define DT_DRV_COMPAT zephyr_spis_bitbang
 #include <zephyr/logging/log_ctrl.h>
 
 // TODO: DELETE
@@ -66,7 +66,6 @@ static int spis_bitbang_configure(const struct spis_bitbang_config *info,
 
 	data->ctx.config = config;
 
-	// log_panic();
 	return 0;
 }
 
@@ -82,45 +81,7 @@ static int spis_bitbang_transceive(const struct device *dev,
 	int rc;
 	const struct gpio_dt_spec *miso = &info->miso_gpio;
 	const struct gpio_dt_spec *mosi = &info->mosi_gpio;
-	const struct gpio_dt_spec *cs = &(data->ctx.cs_gpios[0]);
-	// gpio_flags_t mosi_flags = GPIO_OUTPUT_INACTIVE;
-
-	/*
-	--
-	*/
-
-	// if (info->mosi_gpio.port) {
-	// 	mosi = &info->mosi_gpio;
-	// }
-
-	rc = gpio_pin_configure_dt(cs, GPIO_INPUT | GPIO_PULL_DOWN);
-	if (rc < 0) {
-		LOG_ERR("Couldn't configure CS pin: %d", rc);
-		return rc;
-	}
-
-	rc = gpio_pin_configure_dt(mosi, GPIO_INPUT);
-	if (rc < 0) {
-		LOG_ERR("Couldn't configure MOSI pin: %d", rc);
-		return rc;
-	}
-
-	rc = gpio_pin_configure_dt(miso, GPIO_OUTPUT_INACTIVE);
-	if (rc < 0) {
-		LOG_ERR("Couldn't configure MISO pin: %d", rc);
-		return rc;
-	}
-
-	rc = gpio_pin_configure_dt(&info->clk_gpio, GPIO_INPUT);
-	if (rc < 0) {
-		LOG_ERR("Couldn't configure CLK pin: %d", rc);
-		return rc;
-	}
-
-
-	/*
-	--
-	*/
+	const struct gpio_dt_spec *cs = data->ctx.cs_gpios;
 
 	rc = spis_bitbang_configure(info, data, spi_cfg);
 	if (rc < 0) {
@@ -147,16 +108,10 @@ static int spis_bitbang_transceive(const struct device *dev,
 		lsb = true;
 	}
 
-	LOG_DBG("Waiting for CS to go low");
-	// log_panic();
-
 	// wait for CS to go low
 	while (gpio_pin_get_dt(cs) == 0) {
 		/* no op */
 	}
-
-	LOG_DBG("Beginning loop; cs is %d | tx is %d | rx is %d",
-		gpio_pin_get_dt(cs), spi_context_tx_buf_on(ctx), spi_context_rx_buf_on(ctx));
 
 	while (gpio_pin_get_dt(cs) && 
 		(spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx))) {
@@ -182,9 +137,7 @@ static int spis_bitbang_transceive(const struct device *dev,
 		int b = 0;
 		bool do_read = false;
 
-		if (miso && spi_context_rx_buf_on(ctx)) {
-			do_read = true;
-		}
+		if (spi_context_rx_buf_on(ctx)) do_read = true;
 
 		while (gpio_pin_get_dt(cs) == 1 && i < data->bits) {
 			const int shift = lsb ? i : (data->bits - 1 - i);
@@ -193,9 +146,7 @@ static int spis_bitbang_transceive(const struct device *dev,
 			b = 0;
 
 			/* setup data out first thing */
-			if (miso) {
-				gpio_pin_set_dt(miso, d);
-			}
+			gpio_pin_set_dt(miso, d);
 
 			/* wait until first (leading) clock edge */
 			while (gpio_pin_get_dt(&info->clk_gpio) == clock_state) {
@@ -244,7 +195,6 @@ static int spis_bitbang_transceive(const struct device *dev,
 		spi_context_update_tx(ctx, data->dfs, 1);
 		spi_context_update_rx(ctx, data->dfs, 1);
 	}
-	// log_panic();
 
 	spi_context_complete(ctx, dev, 0);
 
@@ -275,9 +225,6 @@ int spis_bitbang_release(const struct device *dev,
 
 int spis_bitbang_init(const struct device *dev)
 {
-	LOG_ERR("Hello world!");
-	// log_panic();
-
 	const struct spis_bitbang_config *config = dev->config;
 	struct spis_bitbang_data *data = dev->data;
 	int rc;
@@ -292,29 +239,24 @@ int spis_bitbang_init(const struct device *dev)
 		return rc;
 	}
 
-	if (config->mosi_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->mosi_gpio)) {
-			LOG_ERR("GPIO port for mosi pin is not ready");
-			return -ENODEV;
-		}
-		rc = gpio_pin_configure_dt(&config->mosi_gpio,
-				GPIO_INPUT);
-		if (rc < 0) {
-			LOG_ERR("Couldn't configure mosi pin; (%d)", rc);
-			return rc;
-		}
+	if (!gpio_is_ready_dt(&config->mosi_gpio)) {
+		LOG_ERR("GPIO port for mosi pin is not ready");
+		return -ENODEV;
+	}
+	rc = gpio_pin_configure_dt(&config->mosi_gpio, GPIO_INPUT);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure mosi pin; (%d)", rc);
+		return rc;
 	}
 
-	if (config->miso_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->miso_gpio)) {
-			LOG_ERR("GPIO port for miso pin is not ready");
-			return -ENODEV;
-		}
-		rc = gpio_pin_configure_dt(&config->miso_gpio, GPIO_OUTPUT_INACTIVE);
-		if (rc < 0) {
-			LOG_ERR("Couldn't configure miso pin; (%d)", rc);
-			return rc;
-		}
+	if (!gpio_is_ready_dt(&config->miso_gpio)) {
+		LOG_ERR("GPIO port for miso pin is not ready");
+		return -ENODEV;
+	}
+	rc = gpio_pin_configure_dt(&config->miso_gpio, GPIO_OUTPUT_INACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure miso pin; (%d)", rc);
+		return rc;
 	}
 
 	if (data->ctx.num_cs_gpios == 0) {
@@ -329,16 +271,14 @@ int spis_bitbang_init(const struct device *dev)
 		LOG_ERR("CS GPIO not ready");
 		return -ENODEV;
 	}
-	rc = gpio_pin_configure_dt(data->ctx.cs_gpios, GPIO_INPUT | GPIO_PULL_DOWN);
+	rc = gpio_pin_configure_dt(data->ctx.cs_gpios, GPIO_INPUT);
 	if (rc < 0) {
 		LOG_ERR("Failed to configure CS pins: %d", rc);
 		return rc;
 	}
 
-	// log_panic();
-
 	spi_context_unlock_unconditionally(&data->ctx);
-
+	
 	return 0;
 }
 

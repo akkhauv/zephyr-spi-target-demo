@@ -3,7 +3,7 @@
 # Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config CUSTOM_SPIS
+config SPIS_BITBANG
 	bool "Bitbang SPI Slave controller driver"
 	default n
 	depends on GPIO # dependent on GPIO driver
