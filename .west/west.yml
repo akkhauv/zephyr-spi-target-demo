@@ -29,7 +29,7 @@ manifest:
   projects:
     - name: zephyr
       remote: myfork
-      revision: main
+      revision: spis-bitbang
       path: zephyr
       import: false
       import:

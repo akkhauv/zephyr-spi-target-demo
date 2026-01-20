@@ -90,7 +90,7 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 {
 	struct spi_config config;
 
-	config.frequency = 1000000;
+	config.frequency = 100000;
 	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	config.slave = 0;
 	config.cs = *cs;
@@ -137,15 +137,17 @@ int main(void)
 	 * locate on a scope/analyzer, the longer delay at the end helps discern
 	 * where the pattern repeats.
 	 */
-	while (1) {
-		test_basic_write_9bit_words(dev, &cs_ctrl);
-		k_sleep(K_MSEC(200));
+	test_8bit_xfer(dev, &cs_ctrl);
+	
+	// while (1) {
+	// 	test_basic_write_9bit_words(dev, &cs_ctrl);
+	// 	k_sleep(K_MSEC(200));
 
-		test_9bit_loopback_partial(dev, &cs_ctrl);
-		k_sleep(K_MSEC(200));
+	// 	test_9bit_loopback_partial(dev, &cs_ctrl);
+	// 	k_sleep(K_MSEC(200));
 
-		test_8bit_xfer(dev, &cs_ctrl);
-		k_sleep(K_MSEC(1000));
-	}
+	// 	test_8bit_xfer(dev, &cs_ctrl);
+	// 	k_sleep(K_MSEC(1000));
+	// }
 	return 0;
 }
