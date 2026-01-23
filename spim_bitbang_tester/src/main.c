@@ -90,7 +90,7 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 {
 	struct spi_config config;
 
-	config.frequency = 100000;
+	config.frequency = 90000;
 	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	config.slave = 0;
 	config.cs = *cs;

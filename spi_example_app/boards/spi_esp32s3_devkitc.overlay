@@ -12,6 +12,9 @@
 	// custom settings; I have defined this myself.
     cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 
+    cs-setup-time = <90000>;
+    cs-hold-time = <90000>;
+
     // creating the spi device on the spi controller! 
     // note; in cs_gpios, I defined an array of 1. This is the cs_gpio of index 0.
     esp32: esp32@0 {
@@ -20,7 +23,7 @@
 
         // the cs gpio at index 0 in cs-gpios
         reg = <0>;
-        spi-max-frequency = <100000>;
+        spi-max-frequency = <90000>;
 
         // we will use this to get with DT_NODELABEL.
         label = "esp32";

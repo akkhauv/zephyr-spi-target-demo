@@ -9,14 +9,14 @@ int main(void)
     gpio_pin_configure_dt(&my_button, GPIO_INPUT);
 
     int gpio_val = gpio_pin_get_dt(&my_button);
-    int prev = !gpio_val;
+    // int prev = !gpio_val;
     while (1) 
     {
         gpio_val = gpio_pin_get_dt(&my_button);
-        if (gpio_val != prev) {
+        // if (gpio_val != prev) {
             printk("%d\n", gpio_val);
-            prev = gpio_val;
-        }
+        //     prev = gpio_val;
+        // }
     } 
 
     return 0;
