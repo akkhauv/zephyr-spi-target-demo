@@ -1,9 +1,22 @@
 # zephyr-spi-target-demo
 Application testing for Zephyr ESP32 SPI Target API contributions.
 
+## Running the example apps
+Ensure that the virtual environment is active and you are in the base directory `zephyr-spi-target-demo`.
+`source .venv/bin/activate`
+
+For the SPI master app, run:
+`just run-esp32-spi-example`
+
+For the SPI slave app, run:
+`just run-esp32-spi-module`
+
+For the SPI bit-bang slave app, run:
+`just run-esp32-spi-bitbang`
+
 ## Setup
 
-_Note: If you are on a Windows PC, use WSL2 (look up install instructions, ubuntu recommended) and follow the instructions for linux_
+_Note: These instructions are specific to macOS_
 
 1. Install prerequisites
 
@@ -54,38 +67,9 @@ _Note: If you are on a Windows PC, use WSL2 (look up install instructions, ubunt
         west sdk install
         ```
         
-8. Test flash
+7. Test flash
     1. navigate to `zephyr/`
-    3. (FOR WSL USERS; SKIP IF NOT) plug in board and use usbipd to connect it
-       
-       0. as a shortcut, try using `just attach-wsl-usb-port`. This should work as long as your laptop is directly plugged into the UART port on the esp32. **NOTE**: you will still need to add yourself to either the `dialout` or `uucp` user group, as explained below
-       1. on Powershell (run with admin), run `usbipd list` and find the busid for the MCU
-
-          *example output:*
-          ```bash
-          Connected:
-          BUSID  VID:PID    DEVICE                                                                      STATE
-          1-2    10c4:ea60  CP2102N USB to UART Bridge Controller                         Not shared
-          1-3    06cb:016c  Synaptics UWP WBDI                                            Not shared
-          1-10   8087:0033  Intel(R) Wireless Bluetooth(R)                                Not shared
-
-          Persisted:
-          GUID                                  DEVICE
-          ```
-       2. run `usbipd bind --busid [busid]` for the example above, [busid] is `1-2`. If it works, there should be no output
-       3. run `usbipd attach --wsl --busid [busid]`. This will attach the port to WSL.
-      
-          *example output:*
-          ```bash
-          usbipd: info: Using WSL distribution 'archlinux' to attach; the device will be available in all WSL 2 distributions.
-          usbipd: info: Loading vhci_hcd module.
-          usbipd: info: Detected networking mode 'nat'.
-          usbipd: info: Using IP address 172.21.112.1 to reach the host.
-          ```
-          *note: make sure the distro is the one you are using (if you have more than one installed)*
-       4. now, in your WSL terminal, run `lsusb` and make sure the USB device shows
-           1. if `lsusb` is not installed, you may need to install `usbutils` (look up)
-    5. (FOR MAC USERS; SKIP IF NOT) plug in board and run:
+    2. Plug in board and run:
        1. ```bash
           ls /dev/ | grep tty
           ```
@@ -96,56 +80,11 @@ _Note: If you are on a Windows PC, use WSL2 (look up install instructions, ubunt
           ```
           usbserial will appear if you're connected to the expressif's UART path, while usbmodem will appear if you're connected to its USB path
        3. Copy the device name (eg. `tty.usbserial-210`)
-       4. Navigate to testnode/justfile and replace the value in the `ESP_PORT` line with your device name. It will now be able to communicate to the board using this name.
+       4. Navigate to `justfile` and replace the value in the `ESP_PORT` line with your device name. It will now be able to communicate to the board using this name.
           ```
           ESP_PORT         := "/dev/tty.usbserial-210"
           ```
-    6. now that the USB is connected, test build the `hello_world` sample by running `west build -p always -b esp32s3_devkitc/esp32s3/procpu samples/hello_world`
-    7. flash to the usb with `west flash`
-       1. if this is the first time attempting to flash after connecting the USB, you may see an error like the following:
-
-          ```bash
-          /dev/ttyUSB0 failed to connect: Could not open /dev/ttyUSB0, the port is busy or doesn't exist.
-          ([Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0')
-
-          Hint: Try to add user into dialout or uucp group.
-
-
-          A fatal error occurred: Could not connect to an Espressif device on any of the 1 available serial ports.
-          FATAL ERROR: command exited with status 2: esptool --baud 921600 --before default-reset --after hard-reset write-flash -u --flash-mode dio --flash-freq 80m --flash-size 8MB 0x0 /home/evinl/es@p/slayterHIL/test_node/zephyr/build/zephyr/zephyr.bin
-          ```
-       2. to fix this issue, you need add yourself to the correct usergroup:
-          1. run `ls -l /dev/[ttyUSB0]` <- ttyUSB0 is whichever port it complained about in the error
-
-             *example output:*
-             ```bash
-             crw-rw---- 1 root uucp 188, 0 Sep 14 14:14 /dev/ttyUSB0
-             ```
-          2. the user group you need to add yourself to is after `root`. In the example above, it is `uucp`, but it may also be `dialout` or something else
-          3. run `sudo usermod -aG [group] $USER`
-          4. run `newgrp [group]`
-          5. to check that you are in the group, run `groups $USER`
-
-             *example output:*
-             ```bash
-             evinl : evinl wheel uucp docker
-             ```
-    8. The example should now be successfully flashed. In order to check, run `esptool --port /dev/[ttyUSB0] chip-id`. *Note: esptool is automatically installed with zephyr/west (I think). If it is not, install it with `pip`
-    9. If everything works, the output should show at the very least the name of the MCU (for the ESP32-S3, it will say something like `Connected to ESP32-S3 on /dev/[ttyUSB0]` and also warn that it has no chip id. This means that the USB port is properly communicating.
-    10. You can also run `read-flash` instead of `chip-id` if you want
-  
-9. Test Debugger
+8. Test Debugger
      1. Ensure you are plugged into the UART connection (the debugger)
      2. `just run-esp32`
      3. Once the board is done flashing, press the `reset` button
-     4. Your program in app/src/main.c should run and print `Hello World`. 
-
-## Running the example apps
-Ensure that the virtual environment is active and you are in the base directory `zephyr-spi-target-demo`.
-`source .venv/bin/activate`
-
-For the SPI master app, run:
-`just run-esp32-spi-example`
-
-For the SPI slave app, run:
-`just run-esp32-spi-module`
